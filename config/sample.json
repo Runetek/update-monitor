@@ -1,0 +1,9 @@
+{
+    "osrs": {
+        "host": "oldschool1.runescape.com",
+        "port": 43594
+    },
+    "checker": {
+        "sleep": 5000
+    }
+}

@@ -1,18 +1,32 @@
-const RSUpdateChecker = require('./RSUpdateChecker');
-
-const REVISION = +process.argv[2];
-
-function versionFinder(updateChecker, revision) {
-  updateChecker.checkRevision(revision)
-    .then((upToDate) => {
-      if (upToDate) {
-        console.log(revision + ' is the current revision!');
-        process.exit();
-      } else {
-        console.log('uh-oh, ' + revision + ' was no good. proceeding to check next revision.');
-        versionFinder(updateChecker, revision + 1);
-      }
-    });
+// require hook for using ES6 via babel for forking and stuff.
+if ( ! global._babelPolyfill) {
+  require('babel/register')({
+    ignore: false
+  });
 }
 
-versionFinder(new RSUpdateChecker(), REVISION);
+const error = require('debug')('http:error');
+
+import { fork } from 'child_process';
+
+import * as RedisUtil from './util/redis';
+import { startHttpServer } from './http/server';
+
+function spawnUpdateChecker() {
+  const child = fork(__dirname + '/rt/updater', [process.argv[2]], {
+    execPath: './node_modules/.bin/babel-node',
+    execArgv: ['--harmony'],
+    silent: true
+  });
+}
+
+RedisUtil
+  .waitForRedis()
+  .catch((err) => {
+    error(err);
+    process.exit();
+  })
+  .then(Promise.all([
+    startHttpServer(),
+    spawnUpdateChecker()
+  ]));

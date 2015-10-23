@@ -1,5 +1,8 @@
-const struct = require('bufferpack');
-const Socket = require('net').Socket;
+import * as _ from 'lodash';
+import { Socket } from 'net';
+import * as struct from 'bufferpack';
+
+import { Config } from '../util/config';
 
 const OP_OUTDATED = 6;
 
@@ -18,7 +21,14 @@ function createConnection(options) {
 }
 
 class RSUpdateChecker {
-  constructor(options = { host: 'oldschool1.runescape.com', port: 43594 }) {
+  constructor(options = {}) {
+    if ( ! options || _.isEmpty(options)) {
+      options = {
+        host: Config.get('osrs.host'),
+        port: Config.get('osrs.port'),
+      };
+    }
+
     this.options = options;
   }
 
@@ -29,7 +39,6 @@ class RSUpdateChecker {
           // first we bind a listener to all incoming data
           sock.on('data', (buff) => {
             let versionPacket = buff.readInt8(0);
-            console.log(versionPacket)
             resolve(versionPacket !== OP_OUTDATED)
             sock.destroy();
           });
@@ -41,4 +50,4 @@ class RSUpdateChecker {
   }
 }
 
-export default RSUpdateChecker;
+export default { RSUpdateChecker };
